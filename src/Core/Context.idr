@@ -295,7 +295,9 @@ data Arr : Type where
 -- binary blob yet, so decode it first time
 public export
 data ContextEntry : Type where
-     Coded : Binary -> ContextEntry
+     Coded : Maybe (Name -> Name) -> -- how to update names, if imported 'as'
+             Binary -> -- encoded definition
+             ContextEntry
      Decoded : GlobalDef -> ContextEntry
 
 -- All the GlobalDefs. We can only have one context, because name references
@@ -985,10 +987,10 @@ addDef n def
 
 export
 addContextEntry : {auto c : Ref Ctxt Defs} ->
-                  Name -> Binary -> Core Int
-addContextEntry n def
+                  Name -> Maybe (Name -> Name) -> Binary -> Core Int
+addContextEntry n fn def
     = do defs <- get Ctxt
-         (idx, gam') <- addEntry n (Coded def) (gamma defs)
+         (idx, gam') <- addEntry n (Coded fn def) (gamma defs)
          put Ctxt (record { gamma = gam' } defs)
          pure idx
 

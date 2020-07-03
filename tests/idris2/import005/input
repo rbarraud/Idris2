@@ -1,0 +1,7 @@
+:t pythag
+:t fact
+Toast.pythag 10
+Test.pythag
+Toast.Inside.fact 4
+Test.Inside.fact 4
+:q

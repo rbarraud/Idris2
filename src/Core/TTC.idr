@@ -1003,13 +1003,68 @@ TTC Transform where
            rhs <- fromBuf b
            pure (MkTransform {vars} n env lhs rhs)
 
+updateTermNames : (Name -> Name) -> Term vars -> Term vars
+updateTermNames f (Ref fc x name) = Ref fc x (f name)
+updateTermNames f (Meta fc n i xs)
+    = Meta fc (f n) i (map (updateTermNames f) xs)
+updateTermNames f (Bind fc x b scope)
+    = Bind fc x (map (updateTermNames f) b) (updateTermNames f scope)
+updateTermNames f (App fc fn arg)
+    = App fc (updateTermNames f fn) (updateTermNames f arg)
+updateTermNames f (As fc x as pat)
+    = As fc x (updateTermNames f as) (updateTermNames f pat)
+updateTermNames f (TDelayed fc r t)
+    = TDelayed fc r (updateTermNames f t)
+updateTermNames f (TDelay fc r ty arg)
+    = TDelay fc r (updateTermNames f ty) (updateTermNames f arg)
+updateTermNames f (TForce fc r t)
+    = TForce fc r (updateTermNames f t)
+updateTermNames f tm = tm
+
+updateCaseNames : (Name -> Name) -> CaseTree vars -> CaseTree vars
+updateCaseNames f (Case idx p scTy xs)
+    = Case idx p (updateTermNames f scTy)
+           (map updateAltNames xs)
+  where
+    updateAltNames : CaseAlt vars -> CaseAlt vars
+    updateAltNames (ConCase x tag args t) = ConCase x tag args (updateCaseNames f t)
+    updateAltNames (DelayCase ty arg t) = DelayCase ty arg (updateCaseNames f t)
+    updateAltNames (ConstCase x y) = ConstCase x (updateCaseNames f y)
+    updateAltNames (DefaultCase x) = DefaultCase (updateCaseNames f x)
+updateCaseNames f (STerm x y) = STerm x (updateTermNames f y)
+updateCaseNames f c = c
+
+updateDefNames : (Name -> Name) -> Def -> Def
+updateDefNames f (PMDef pi args ct rt pats)
+    = PMDef pi args (updateCaseNames f ct) (updateCaseNames f rt)
+            (map updateNamesPat pats)
+  where
+    updateNamesEnv : Env Term vars -> Env Term vars
+    updateNamesEnv [] = []
+    updateNamesEnv (b :: bs) = map (updateTermNames f) b :: updateNamesEnv bs
+
+    updateNamesPat : (vs ** (Env Term vs, Term vs, Term vs)) ->
+                     (vs ** (Env Term vs, Term vs, Term vs))
+    updateNamesPat (_ ** (env, lhs, rhs))
+        = (_ ** (updateNamesEnv env,
+                 (updateTermNames f lhs), (updateTermNames f rhs)))
+updateDefNames f (TCon t a ps ds fs mw cons detag)
+    = TCon t a ps ds fs (map f mw) (map f cons) detag
+updateDefNames f def = def
+
+updateNames : Maybe (Name -> Name) -> GlobalDef -> GlobalDef
+updateNames Nothing d = d
+updateNames (Just f) d
+    = record { fullname $= f,
+               definition $= updateDefNames f } d
+
 -- decode : Context -> Int -> (update : Bool) -> ContextEntry -> Core GlobalDef
-Core.Context.decode gam idx update (Coded bin)
+Core.Context.decode gam idx update (Coded fn bin)
     = do b <- newRef Bin bin
          def <- fromBuf b
          let a = getContent gam
          arr <- get Arr
-         def' <- resolved gam def
+         def' <- resolved gam (updateNames fn def)
          when update $ coreLift $ writeArray arr idx (Decoded def')
          pure def'
 Core.Context.decode gam idx update (Decoded def) = pure def

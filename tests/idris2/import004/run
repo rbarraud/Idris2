@@ -1,4 +1,4 @@
-$1 --no-banner Cycle1.idr
-$1 --no-banner Loop.idr
+$1 --check Cycle1.idr
+$1 --check Loop.idr
 
 rm -rf build

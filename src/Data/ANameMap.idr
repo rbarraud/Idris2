@@ -95,7 +95,6 @@ merge ctxt (MkANameMap exact hier)
     insertFrom ((n, val) :: cs) ctxt
         = insertFrom cs (addName n val ctxt)
 
--- TODO: Update namespaces so 'as' works
 export
 mergeAs : List String -> List String ->
           ANameMap a -> ANameMap a -> ANameMap a
@@ -105,6 +104,7 @@ mergeAs oldns newns ctxt (MkANameMap exact hier)
     insertFrom : List (Name, a) -> ANameMap a -> ANameMap a
     insertFrom [] ctxt = ctxt
     insertFrom ((n, val) :: cs) ctxt
-        = insertFrom cs (addName n val ctxt)
-
-
+        = let n' = if oldns == newns
+                      then n
+                      else asName oldns (Just newns) n in
+              insertFrom cs (addName n' val ctxt)

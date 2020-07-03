@@ -1,0 +1,15 @@
+1/2: Building Test (Test.idr)
+2/2: Building As (As.idr)
+As> Toast.pythag : Int -> List (Int, (Int, Int))
+As> Toast.Inside.fact : Nat -> Nat
+As> [(3, (4, 5)), (6, (8, 10))]
+As> (interactive):1:1--1:12:Undefined name Test.pythag at:
+1	Test.pythag
+	^^^^^^^^^^^
+
+As> 24
+As> (interactive):1:1--1:19:Undefined name Test.Inside.fact at:
+1	Test.Inside.fact 4
+	^^^^^^^^^^^^^^^^^^
+
+As> Bye for now!
