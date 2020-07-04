@@ -95,10 +95,12 @@ merge ctxt (MkANameMap exact hier)
     insertFrom ((n, val) :: cs) ctxt
         = insertFrom cs (addName n val ctxt)
 
+-- Add new names to a context, updating the namespace where appropriate
+-- (imported with 'import as')
 export
 mergeAs : List String -> List String ->
           ANameMap a -> ANameMap a -> ANameMap a
-mergeAs oldns newns ctxt (MkANameMap exact hier)
+mergeAs oldns newns (MkANameMap exact hier) ctxt
     = insertFrom (toList exact) ctxt
   where
     insertFrom : List (Name, a) -> ANameMap a -> ANameMap a

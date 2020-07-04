@@ -17,6 +17,10 @@ Language changes:
    + Implemented `%macro` function flag, to remove the syntactic noise of
      invoking elaborator scripts. This means the function must always
      be fully applied, and is run under `%runElab`
+* `import X as Y` is now fully implemented. This imports the module `X` but
+  replacing the namespace prefix with `Y`.
+   + So, for example, if there is a sub-namespace `Z` within `X`, then the
+     name `X.Z.f` will be imported as `Y.Z.f`.
 
 Library changes:
 

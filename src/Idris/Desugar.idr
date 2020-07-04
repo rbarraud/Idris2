@@ -53,17 +53,6 @@ ifThenElse : Bool -> Lazy a -> Lazy a -> a
 ifThenElse True t e = t
 ifThenElse False t e = e
 
-export
-extendAs : {auto s : Ref Syn SyntaxInfo} ->
-           List String -> List String -> SyntaxInfo -> Core ()
-extendAs old as newsyn
-    = do syn <- get Syn
-         put Syn (record { infixes $= mergeLeft (infixes newsyn),
-                           prefixes $= mergeLeft (prefixes newsyn),
-                           ifaces $= mergeAs old as (ifaces newsyn),
-                           bracketholes $= ((bracketholes newsyn) ++) }
-                  syn)
-
 mkPrec : Fixity -> Nat -> OpPrec
 mkPrec InfixL p = AssocL p
 mkPrec InfixR p = AssocR p

@@ -2,6 +2,9 @@
 2/2: Building As (As.idr)
 As> Toast.pythag : Int -> List (Int, (Int, Int))
 As> Toast.Inside.fact : Nat -> Nat
+As> Toast.nardle : Needle a => a -> a
+As> Toast.noo : Needle a => a -> a
+As> 16
 As> [(3, (4, 5)), (6, (8, 10))]
 As> (interactive):1:1--1:12:Undefined name Test.pythag at:
 1	Test.pythag

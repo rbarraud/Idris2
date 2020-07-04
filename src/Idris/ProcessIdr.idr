@@ -24,7 +24,9 @@ import Idris.REPLOpts
 import Idris.Syntax
 
 import Data.List
+import Data.ANameMap
 import Data.NameMap
+import Data.StringMap
 
 import System.File
 
@@ -55,6 +57,38 @@ processDecls decls
                                       errs => errs)
          errs <- getTotalityErrors
          pure (mapMaybe id xs ++ errs)
+
+mergeIFace : List String -> List String ->
+             ANameMap IFaceInfo -> ANameMap IFaceInfo -> ANameMap IFaceInfo
+mergeIFace oldns newns newctxt ctxt
+    = insertFrom (toList newctxt) ctxt
+  where
+    updateName : (Name, a) -> (Name, a)
+    updateName (n, x) = (asName oldns (Just newns) n, x)
+
+    insertFrom : List (Name, IFaceInfo) ->
+                 ANameMap IFaceInfo -> ANameMap IFaceInfo
+    insertFrom [] ctxt = ctxt
+    insertFrom ((n, val) :: cs) ctxt
+        = let (n', val')
+                = if oldns == newns
+                     then (n, val)
+                     else (asName oldns (Just newns) n,
+                           record { iconstructor $= asName oldns (Just newns),
+                                    methods $= map updateName,
+                                    defaults $= map updateName } val)
+                       in
+              insertFrom cs (addName n' val' ctxt)
+
+extendAs : {auto s : Ref Syn SyntaxInfo} ->
+           List String -> List String -> SyntaxInfo -> Core ()
+extendAs old as newsyn
+    = do syn <- get Syn
+         put Syn (record { infixes $= mergeLeft (infixes newsyn),
+                           prefixes $= mergeLeft (prefixes newsyn),
+                           ifaces $= mergeIFace old as (ifaces newsyn),
+                           bracketholes $= ((bracketholes newsyn) ++) }
+                  syn)
 
 readModule : {auto c : Ref Ctxt Defs} ->
              {auto u : Ref UST UState} ->

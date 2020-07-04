@@ -1056,6 +1056,7 @@ updateNames : Maybe (Name -> Name) -> GlobalDef -> GlobalDef
 updateNames Nothing d = d
 updateNames (Just f) d
     = record { fullname $= f,
+               type $= updateTermNames f,
                definition $= updateDefNames f } d
 
 -- decode : Context -> Int -> (update : Bool) -> ContextEntry -> Core GlobalDef

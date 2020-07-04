@@ -1,0 +1,5 @@
+:t pythag
+:t fact
+AsTest.pythag 10
+AsTest.Inside.fact 4
+:q

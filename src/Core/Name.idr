@@ -24,6 +24,7 @@ asName : List String -> -- Initial module name
          Maybe (List String) -> -- 'as' module name
          Name -> -- identifier
          Name
+asName mod (Just ns) (DN s n) = DN s (asName mod (Just ns) n)
 asName mod (Just ns) (NS oldns n)
     = NS (updateNS mod oldns) n
   where

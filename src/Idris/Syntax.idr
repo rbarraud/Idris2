@@ -12,6 +12,7 @@ import public Core.TT
 import TTImp.TTImp
 
 import Data.ANameMap
+import Data.List
 import Data.StringMap
 
 %default covering
@@ -601,6 +602,10 @@ record IFaceInfo where
   defaults : List (Name, List ImpClause)
 
 export
+Show IFaceInfo where
+  show x = show (iconstructor x) ++ ": " ++ show (map fst (methods x))
+
+export
 TTC IFaceInfo where
   toBuf b (MkIFaceInfo ic impps ps cs ms ds)
       = do toBuf b ic
@@ -619,8 +624,8 @@ TTC IFaceInfo where
            ds <- fromBuf b
            pure (MkIFaceInfo ic impps ps cs ms ds)
 
--- If you update this, update 'extendAs' in Desugar to keep it up to date
--- when reading imports
+-- If you update this, update 'extendAs' in ProcessIdr to keep it up to date
+-- when reading imports.
 public export
 record SyntaxInfo where
   constructor MkSyntax
@@ -629,6 +634,7 @@ record SyntaxInfo where
   infixes : StringMap (Fixity, Nat)
   prefixes : StringMap Nat
   ifaces : ANameMap IFaceInfo
+  saveIFaces : List Name -- interfaces to write out
   bracketholes : List Name -- hole names in argument position (so need
                            -- to be bracketed when solved)
   usingImpl : List (Maybe Name, RawImp)
@@ -652,9 +658,10 @@ TTC Fixity where
 export
 TTC SyntaxInfo where
   toBuf b syn
-      = do toBuf b (toList (infixes syn))
-           toBuf b (toList (prefixes syn))
-           toBuf b (toList (ifaces syn))
+      = do toBuf b (StringMap.toList (infixes syn))
+           toBuf b (StringMap.toList (prefixes syn))
+           toBuf b (filter (\iface => Builtin.fst iface `elem` saveIFaces syn)
+                           (ANameMap.toList (ifaces syn)))
            toBuf b (bracketholes syn)
            toBuf b (startExpr syn)
 
@@ -665,7 +672,7 @@ TTC SyntaxInfo where
            bhs <- fromBuf b
            start <- fromBuf b
            pure (MkSyntax (fromList inf) (fromList pre) (fromList ifs)
-                          bhs [] start)
+                          [] bhs [] start)
 
 HasNames IFaceInfo where
   full gam iface
@@ -709,6 +716,7 @@ initSyntax
     = MkSyntax (insert "=" (Infix, 0) empty)
                (insert "-" 10 empty)
                empty
+               []
                []
                []
                (IVar (MkFC "(default)" (0, 0) (0, 0)) (UN "main"))
